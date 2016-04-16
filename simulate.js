@@ -68,7 +68,7 @@ function simulate(instr) {
 
         case 0b101: // format 12 & 13 &  14
             //format 13 and 14 may have clashed since L can be 0 or 1 using previous parse
-			console.log('formats 12-14');           
+			console.log('formats 12-14');
 			if((instr >> 9 & 0b10) == 0b10){
                 pushPopRegisters(instr);
             }else{
@@ -88,11 +88,11 @@ function simulate(instr) {
             break;
 
         case 0b111: // format 18 & 19
-			if(instr>>12 == 0xf){		               
+			if(instr>>12 == 0xf){
 				longBranchWithLink(instr);// format 19
 			}else {
 				unconditionalBranch(instr); // format 18
-			}            
+			}
 			break;
         case 0xdead: // terminate program
             terminateProgram(0); // zero for exit_success
@@ -446,8 +446,8 @@ function unconditionalBranch(instr){
     var offset11 = instr & 0x7ff;
     //sign extend and mult by 2
     offset11 = offset11 << 1;
-    offset11 = offset11 >>> 1;
-    offset11 = offset11 << 1;
+//    offset11 = offset11 >>> 1;
+//    offset11 = offset11 << 1;
 
     var stringInstr = "B " + offset11;
     regs[PC] += offset11 ;
@@ -459,12 +459,14 @@ function longBranchWithLink(instr){
     var offset = instr & 0x7ff;
     //offset = offset << 1;
     //offset = offset >>> 1;
-	
+
 	if ((instr >> 11 & 1) == 0) {
-		regs[LR] = regs[PC] ;
+        offset = offset<<12;
+		regs[LR] = regs[PC] + offset;
     }else {
         var tmp = regs[PC]-2 ;// address of next instruction = tmp ?
-        regs[PC] = regs[LR] + offset<<1;
+        offset = offset<<1;
+        regs[PC] = regs[LR] + offset;
         regs[LR] = tmp | 1;
     }
     var stringInstr = "BL " + offset; // supposed to be label
