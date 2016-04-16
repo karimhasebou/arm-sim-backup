@@ -21,10 +21,9 @@ function step(){
     var instrLoc = regs[15]-4;
     if(instrLoc < mem.length){
         var instr = mem[instrLoc] | mem[instrLoc+1]<<8
-        regs[15] += 2; // increment by one
         simulate(instr);// load upper and lower part of half word instruction
-        console.log('instr '+instr);
         printRegisterContent(regs);
+        regs[15] += 2; // increment by one
     }else{ // disable buttons of step and start since execution finished
         console.log('program execution done');
         console.log(mem.length + " and pc " + regs[PC]);
@@ -39,6 +38,7 @@ function simulate(instr) {
     "use strict";
     var fmt = instr>>13; // discard all but last 3 bits used for format identification
     console.log('simulate case '+fmt);
+    console.log('simulate instr'+instr);
     switch(fmt){
         case 0b000: // for format zero check whether to add/subtract or shift register
             (instr >> 11 & 0b11) == 3 ? addSubtract(instr) : moveShiftedRegister(instr);
@@ -77,16 +77,14 @@ function simulate(instr) {
             break;
 
         case 0b110: // format 15 & 16 & 17
-            if((instr>>8 & 0b11111) == 0b11111)
-				 softwareInterrupt(instr); // format 17
-            else {
-                 if ((instr >> 12 & 1) == 1)
-                    conditionalBranch(instr); // format 16
-                 else
-                    multLoadStore(instr); // format 15
+            if((instr>>8 & 0x1f) == 0x1f){
+				softwareInterrupt(instr); // format 17
+                console.log('format 17');
+            }else{
+                conditionalBranch(instr); // format 16
+                console.log('format 16');
             }
             break;
-
         case 0b111: // format 18 & 19
 			if(instr>>12 == 0xf){
 				longBranchWithLink(instr);// format 19
@@ -486,51 +484,51 @@ function conditionalBranch(instr){
 
     switch(cond){
         case 0:
-            if(zeroFlag == 1)  regs[PC] += (offset)*4;
+            if(zeroFlag == 1)  regs[PC] += (offset)*2;
             instrString = 'BEQ';
             break;
         case 1:
-            if(zeroFlag  == 0) regs[PC] += (offset)*4;
+            if(zeroFlag  == 0) regs[PC] += (offset)*2;
             instrString = 'BNE';
             break;
         case 2:
-            if(carryFlag == 1) regs[PC] += (offset)*4;
+            if(carryFlag == 1) regs[PC] += (offset)*2;
             instrString = 'BCS';
             break;
         case 3:
-            if(carryFlag == 0) regs[PC] += (offset)*4;
+            if(carryFlag == 0) regs[PC] += (offset)*2;
             instrString = 'BCC';
             break;
         case 4:
-            if(negativeFlag == 1) regs[PC] += (offset)*4;
+            if(negativeFlag == 1) regs[PC] += (offset)*2;
             instrString = 'BMI';
             break;
         case 5:
-            if(negativeFlag == 0) regs[PC] += (offset)*4;
+            if(negativeFlag == 0) regs[PC] += (offset)*2;
             instrString = 'BPL';
             break;
         case 6:
-            if(overflowFlag == 1) regs[PC] += (offset)*4;
+            if(overflowFlag == 1) regs[PC] += (offset)*2;
             instrString = 'BVS';
             break;
         case 7:
-            if(overflowFlag == 0) regs[PC] += (offset)*4;
+            if(overflowFlag == 0) regs[PC] += (offset)*2;
             instrString = 'BCS';
             break;
         case 8:
-            if(carryFlag == 1 && zeroFlag == 0) regs[PC] += (offset)*4;
+            if(carryFlag == 1 && zeroFlag == 0) regs[PC] += (offset)*2;
             instrString = 'BHI';
             break;
         case 9:
-            if(carryFlag == 0 || zeroFlag == 1) regs[PC] += (offset)*4;
+            if(carryFlag == 0 || zeroFlag == 1) regs[PC] += (offset)*2;
             instrString = 'BLS';
             break;
         case 10:
-            if(negativeFlag == overflowFlag) regs[PC] += (offset)*4;
+            if(negativeFlag == overflowFlag) regs[PC] += (offset)*2;
             instrString = 'BGE';
             break;
         case 11:
-            if(negativeFlag != overflowFlag) regs[PC] += (offset)*4;
+            if(negativeFlag != overflowFlag) regs[PC] += (offset)*2;
             instrString = 'BLT';
             break;
         case 12:
@@ -540,9 +538,11 @@ function conditionalBranch(instr){
             break;
         case 13:
             if(zeroFlag == 1 || negativeFlag == overflowFlag)
-                regs[PC] += (offset);
+                regs[PC] += (offset)*2;
             instrString = 'BLE';
             break;
+        default:
+            instrString = 'unknown branch instr';
     }
     instrString += ' ' + offset;
     printInstruction(instrString);
