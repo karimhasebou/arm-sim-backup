@@ -23,7 +23,7 @@ function step(){
         var instr = mem[instrLoc] | mem[instrLoc+1]<<8
         simulate(instr);// load upper and lower part of half word instruction
         printRegisterContent(regs);
-        regs[15] += 2; // increment by one
+        regs[PC] += 2; // increment by one
     }else{ // disable buttons of step and start since execution finished
         console.log('program execution done');
         console.log(mem.length + " and pc " + regs[PC]);
@@ -67,10 +67,14 @@ function simulate(instr) {
         case 0b101: // format 12 & 13 &  14
             //format 13 and 14 may have clashed since L can be 0 or 1 using previous parse
             console.log('formats 12-14');
-			if ( (instr>>8) == 0xb0 ){
+            if(instr>>11 != 0xb){
+                console.log('formats 12 format detected');
+            }else if ( (instr>>8) == 0xb0 ){
  				addOffsetStackPointer(instr); // format
-            }else if((instr>>9) & 0b10 == 0b10){
+            }else if(((instr >> 9) & 0b10) == 0b10){
                 pushPopRegisters(instr);
+            }else{
+                console.log('undefined format');
             }
             break;
 
@@ -86,7 +90,7 @@ function simulate(instr) {
             }
             break;
         case 0b111: // format 18 & 19
-            if(instr>>11 == 0x12){
+            if(instr>>11 == 0x1c){
                 unconditionalBranch(instr); // format 18
             }else {
                 longBranchWithLink(instr);// format 19
@@ -367,6 +371,7 @@ function pcRelativeLoad(instr){
     regs[rd] = mem[word8+regs[15]];
     printInstruction('LDR R'+rd+'[PC,#'+word8+']');
 }
+/*
 // format 7
 function loadStoreRegisterOffset(instr){
     'use strict';
@@ -397,7 +402,40 @@ function loadStoreRegisterOffset(instr){
     }
     stringInstr += ' R,'+registerSDNum+'[R'+baseRegisterIndex+',R'+offsetRegIndex+']';
     printInstruction(stringInstr);
+} */
+
+// format 7 remade
+function loadStoreRegisterOffset(instr){
+    'use strict';
+    var rd = instr & 0x7;
+    var rb = instr>>3 & 0x7;
+    var ro = instr>>6 & 0x7;
+
+    var stringInstr;
+    if(instr>>11 & 1 == 0){ // checking L whether store or load
+        mem[regs[rb]+regs[ro]] = registerSDNum & 0xff; // get only first 8 bits
+        if( (instr>>10) & 1 == 0){ // save the rest of word
+          mem[regs[rb]+regs[ro]+1] = (regs[rd]>>8) & 0xff;
+          mem[regs[rb]+regs[ro]+2] = (regs[rd]>>16) & 0xff;
+          mem[regs[rb]+regs[ro]+3] = (regs[rd]>>24) & 0xff;
+          stringInstr = 'STR';
+        }else
+            stringInstr = 'STRB';
+    }else{
+        regs[registerSDNum] = mem[regs[rb]+regs[ro]];
+        if( (instr>>10 & 1) == 0){
+            regs[rd] |= mem[regs[rb]+regs[ro]+1]<<8; // load bits intro appropriate positons
+            regs[rd] |= mem[regs[rb]+regs[ro]+2]<<16;
+            regs[rd] |= mem[regs[rb]+regs[ro]+3]<<24;
+            stringInstr = 'LDR';
+        }else
+            stringInstr = 'LDRB';
+    }
+    stringInstr += ' R,'+rd+'[R'+rb+',R'+ro+']';
+    printInstruction(stringInstr);
 }
+
+
 // format 9
 function loadStoreWithImmOffset(instr){
     'use strict';
@@ -553,6 +591,7 @@ function concatArgs(){
 function pushPopRegisters(instr){
     "use strict";
     var instrString = '';
+
     var push = (instr>>11) & 1;
     if(push == 0){ // push regs
         instrString = 'PUSH{ ';
