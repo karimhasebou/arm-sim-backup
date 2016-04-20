@@ -213,16 +213,16 @@ function arithmeticImediate(instr){
             carryFlag = isAddGenCarry(regs[destination],-offset8);
             break;
         case 2:
-            overflowFlag = isAddOverflowing(regs[destination],
-                offset8,regs[destination]+offset8);
-            carryFlag = isAddGenCarry(regs[destination],offset8);
+            overflowFlag = isAddOverflowing(regs[destinationReg],
+                offset8,regs[destinationReg]+offset8);
+            carryFlag = isAddGenCarry(regs[destinationReg],offset8);
 
             regs[destinationReg] = regs[destinationReg] + offset8;
             stringInstr = concatArgs('ADD ','R',
-                    destinationReg,',R',destinationReg,',#',offset);
+                    destinationReg,',R',destinationReg,',#',offset8);
 
-            zeroFlag = Number(regs[destination] == 0);
-            negativeFlag = Number(regs[destination] < 0);
+            zeroFlag = Number(regs[destinationReg] == 0);
+            negativeFlag = Number(regs[destinationReg] < 0);
 
             break;
         case 3:
