@@ -51,33 +51,33 @@ function simulate(instr) {
         case 0b010: // format 4 & 6 & 7
             if (instr >> 10 == 0x10)
                 alu(instr); // alu operations format 4
-            else if (instr >> 11 & (0b01001) == (0b01001))
+            else if ( (instr >> 11) & 0x9 == 0x9)
                 pcRelativeLoad(instr); // format 6
-            else if (instr >> 12 & (0b0101) == (0b0101))
+            else if ( (instr >> 12) & 0x5 == 0x5)
                 loadStoreRegisterOffset(instr); // format 7
             break;
         case 0b011: // format 9
             loadStoreWithImmOffset(instr);
             break;
-
         case 0b100: // format 10 & 11
-            if(instr >> 12 == (0b1000))
+            if( (instr>>12) == 0x8) // format 10
                 loadStoreHalfword(instr);
-            else
-                SPloadStore(instr);
-
+            else if( (instr>>12) == 0x9)
+                SPloadStore(instr); // format 11
         case 0b101: // format 12 & 13 &  14
             //format 13 and 14 may have clashed since L can be 0 or 1 using previous parse
-			console.log('formats 12-14');
-			if((instr >> 9 & 0b10) == 0b10){
-                pushPopRegisters(instr);
-            }else{
+            console.log('formats 12-14');
+			if ( (instr>>8) == 0xb0 ){
  				addOffsetStackPointer(instr); // format
+            }else if((instr>>9) & 0b10 == 0b10){
+                pushPopRegisters(instr);
             }
             break;
 
         case 0b110: // format 15 & 16 & 17
-            if((instr>>8 & 0x1f) == 0x1f){
+            if(instr == 0xdead){
+                console.log('program terminated');
+            }else if(instr>>8 == 0xdf){
 				softwareInterrupt(instr); // format 17
                 console.log('format 17');
             }else{
@@ -86,15 +86,12 @@ function simulate(instr) {
             }
             break;
         case 0b111: // format 18 & 19
-			if(instr>>12 == 0xf){
-				longBranchWithLink(instr);// format 19
-			}else {
-				unconditionalBranch(instr); // format 18
-			}
+            if(instr>>11 == 0x12){
+                unconditionalBranch(instr); // format 18
+            }else {
+                longBranchWithLink(instr);// format 19
+            }
 			break;
-        case 0xdead: // terminate program
-            terminateProgram(0); // zero for exit_success
-            break;
         default:
             break;
     }
@@ -380,16 +377,16 @@ function loadStoreRegisterOffset(instr){
     var registerSDNum = instr&0b111; // source/destination register index
     var stringInstr;
     if(instr>>11 & 1 == 0){ // checking L whether store or load
-        mem[offsetReg+baseRegister] = registerSDNum&255; // get only first 8 bits
+        mem[offsetReg+baseRegister] = registerSDNum & 0xff; // get only first 8 bits
         if( (instr>>10) & 1 == 0){ // save the rest of word
-          mem[offsetReg+baseRegister+1] = regs[registerSDNum]>>8 & 255;
-          mem[offsetReg+baseRegister+2] = regs[registerSDNum]>>16 & 255;
-          mem[offsetReg+baseRegister+3] = regs[registerSDNum]>>24 & 255;
+          mem[offsetReg+baseRegister+1] = (regs[registerSDNum]>>8) & 0xff;
+          mem[offsetReg+baseRegister+2] = (regs[registerSDNum]>>16) & 0xff;
+          mem[offsetReg+baseRegister+3] = (regs[registerSDNum]>>24) & 0xff;
           stringInstr = 'STR';
         }else
             stringInstr = 'STRB';
     }else{
-        regs[registerSDNum] = mem[offsetReg+baseRegister]&255;
+        regs[registerSDNum] = mem[offsetReg+baseRegister];
         if( (instr>>10 & 1) == 0){
             regs[registerSDNum] |= mem[offsetReg+baseRegister+1]<<8; // load bits intro appropriate positons
             regs[registerSDNum] |= mem[offsetReg+baseRegister+2]<<16;
@@ -410,17 +407,17 @@ function loadStoreWithImmOffset(instr){
     var registerSDNum = instr&0b111; // source/destination register index
     var stringInstr;
     if(instr>>11 & 1 == 0){ // checking L whether store or load
-        mem[baseRegister+offset5] = registerSDNum&255; // get only first 8 bits
+        mem[baseRegister+offset5] = registerSDNum & 0xff; // get only first 8 bits
         if( (instr>>12) & 1 == 0){ // save the rest of word
-          mem[offset5+baseRegister+1] = regs[registerSDNum]>>8 & 255;
-          mem[offset5+baseRegister+2] = regs[registerSDNum]>>16 & 255;
-          mem[offset5+baseRegister+3] = regs[registerSDNum]>>24 & 255;
+          mem[offset5+baseRegister+1] = regs[registerSDNum]>>8 & 0xff;
+          mem[offset5+baseRegister+2] = regs[registerSDNum]>>16 & 0xff;
+          mem[offset5+baseRegister+3] = regs[registerSDNum]>>24 & 0xff;
           stringInstr = 'STR';
         }else
             stringInstr = 'STRB';
     }else{
-            regs[registerSDNum] = mem[offset5+baseRegister]&255;
-        if( (instr>>10 & 1) == 0){
+            regs[registerSDNum] = mem[offset5+baseRegister];
+        if( (instr>>12 & 1) == 0){
             regs[registerSDNum] |= mem[offset5+baseRegister+1]<<8; // load bits intro appropriate positons
             regs[registerSDNum] |= mem[offset5+baseRegister+2]<<16;
             regs[registerSDNum] |= mem[offset5+baseRegister+3]<<24;
@@ -433,19 +430,18 @@ function loadStoreWithImmOffset(instr){
 }
 //format 13
 function addOffsetStackPointer(instr){
-    var immediate = instr & 0x7f;
-    if((instr>>7&1) == 1)
+    var immediate = (instr & 0x7f)<<2; // offset given in word size
+    if( (instr>>7) & 1 == 1)
         immediate = -immediate;
-    regs[13] += immediate;
+    regs[STACK_POINTER] += immediate;
     printInstruction('ADD SP,#'+immediate);
 }
 //format 18
 function unconditionalBranch(instr){
     var offset11 = instr & 0x7ff;
     //sign extend and mult by 2
-    offset11 = offset11 << 1;
-//    offset11 = offset11 >>> 1;
-//    offset11 = offset11 << 1;
+    offset11 = offset11 << 21;// shifting to sign extend the bits
+    offset11 = offset11 >>> 20;
 
     var stringInstr = "B " + offset11;
     regs[PC] += offset11 ;
@@ -455,15 +451,16 @@ function unconditionalBranch(instr){
 // format 19
 function longBranchWithLink(instr){
     var offset = instr & 0x7ff;
-    //offset = offset << 1;
-    //offset = offset >>> 1;
 
 	if ((instr >> 11 & 1) == 0) {
+        offset = offset<<21;  // sign extending
+        offset = offset>>>21;
         offset = offset<<12;
 		regs[LR] = regs[PC] + offset;
     }else {
-        var tmp = regs[PC]-2 ;// address of next instruction = tmp ?
-        offset = offset<<1;
+        var tmp = regs[PC] ;// address of next instruction = tmp ?
+        offset = offset<<21;
+        offset = offset>>>20;
         regs[PC] = regs[LR] + offset;
         regs[LR] = tmp | 1;
     }
@@ -477,10 +474,9 @@ function conditionalBranch(instr){
     var cond = (instr>>8) & 0xf;
     var offset = instr & 0xff;
     //sign extend
-    offset = offset << 1;
-    offset = offset >>> 1;
+    offset = offset << 24;
+    offset = offset >>> 23;
     // mult * 2 or shift by one
-    offset = offset << 1;
 
     switch(cond){
         case 0:
@@ -557,24 +553,25 @@ function concatArgs(){
 function pushPopRegisters(instr){
     "use strict";
     var instrString = '';
-    if(instr>>11 & 1 == 0){ // push regs
+    var push = (instr>>11) & 1;
+    if(push == 0){ // push regs
         instrString = 'PUSH{ ';
         for(var i = 0; i < 8;i++){
-            if(instr>>i & 1 == 1){
+            if((instr>>i) & 1 == 1){
                 regs[STACK_POINTER] -= 4;
-                mem[regs[STACK_POINTER]] = regs[i] & 255;//chk
-                mem[regs[STACK_POINTER]+1] = regs[i]>>8 & 255;
-                mem[regs[STACK_POINTER]+2] = regs[i]>>16 & 255;
-                mem[regs[STACK_POINTER]+3] = regs[i]>>24 & 255;
+                mem[regs[STACK_POINTER]] = (regs[i]) & 0xff;//chk
+                mem[regs[STACK_POINTER]+1] = (regs[i]>>8) & 0xff;
+                mem[regs[STACK_POINTER]+2] = (regs[i]>>16) & 0xff;
+                mem[regs[STACK_POINTER]+3] = (regs[i]>>24) & 0xff;
                 instrString += 'R'+i+',';
             }
         }
-        if(instr>>8 & 1 == 1){ // save lr reg
+        if((instr>>8) & 1 == 1){ // save lr reg
             regs[STACK_POINTER] -= 4;
-            mem[regs[STACK_POINTER]] = regs[LR] & 255;//chk
-            mem[regs[STACK_POINTER]+1] = regs[LR]>>8 & 255;
-            mem[regs[STACK_POINTER]+2] = regs[LR]>>16 & 255;
-            mem[regs[STACK_POINTER]+3] = regs[LR]>>24 & 255;
+            mem[regs[STACK_POINTER]] = (regs[LR]) & 0xff;//chk
+            mem[regs[STACK_POINTER]+1] = (regs[LR]>>8) & 0xff;
+            mem[regs[STACK_POINTER]+2] = (regs[LR]>>16) & 0xff;
+            mem[regs[STACK_POINTER]+3] = (regs[LR]>>24) & 0xff;
             instrString += 'LR';
         }
     }else{ // pop regs
@@ -589,7 +586,7 @@ function pushPopRegisters(instr){
                 instrString += 'R'+i+',';
             }
         }
-        if(instr>>8 & 1 == 1){
+        if(((instr>>8) & 1) == 1){
                 regs[PC]  = mem[regs[STACK_POINTER]];
                 regs[PC] |= mem[regs[STACK_POINTER]+1]<<8;
                 regs[PC] |= mem[regs[STACK_POINTER]+2]<<16;
