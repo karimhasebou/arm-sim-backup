@@ -437,7 +437,7 @@ function addOffsetStackPointer(instr){
     if((instr>>7&1) == 1)
         immediate = -immediate;
     regs[13] += immediate;
-    printInstruction('ADD SP,#',immediate);
+    printInstruction('ADD SP,#'+immediate);
 }
 //format 18
 function unconditionalBranch(instr){
@@ -474,7 +474,7 @@ function longBranchWithLink(instr){
 function conditionalBranch(instr){
     "use strict";
     var instrString = '';
-    var cond = instr>>8 & 0xf;
+    var cond = (instr>>8) & 0xf;
     var offset = instr & 0xff;
     //sign extend
     offset = offset << 1;
@@ -541,8 +541,6 @@ function conditionalBranch(instr){
                 regs[PC] += (offset)*2;
             instrString = 'BLE';
             break;
-        default:
-            instrString = 'unknown branch instr';
     }
     instrString += ' ' + offset;
     printInstruction(instrString);
