@@ -686,22 +686,22 @@ function softwareInterrupt(instr){
             break;
         case 2: // reading char
             var input = prompt("Enter a character");
-            mem[reg[0]] = input[0];
+            mem[regs[0]] = input.charCodeAt(0);
             break;
         case 3: // reading string assume r0 contains address r1 contains string size
             var input = prompt("Enter a string");
             for(var i = 0; i < regs[1]-1;i++){
-                mem[regs[0]+i] = input[i];
-            }mem[regs[0]+regs[1]] = 0;
+                mem[regs[0]+i] = input.charCodeAt(i);
+            }mem[regs[0]+i] = 0;
             break;
         case 5: // print char
-            printProgramOut(mem[regs[0]]);
+            printProgramOut(String.fromCharCode(mem[regs[0]]));
         break;
         case 6: // print string
-            var i = 0;
+            var i = regs[0];
             var str = '';
             while(mem[i] != 0)
-                str += mem[i++];
+                str += String.fromCharCode(mem[i++]);
             printProgramOut(str);
         break;
     }

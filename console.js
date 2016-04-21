@@ -81,6 +81,19 @@ function addEventListeners(){
         Notification.requestPermission();
   });
   printRegisterContent(regs);
+  //testcode();
+}
+// for testing software interrupts
+function testcode(){
+    regs[0] = 120;
+    regs[1] = 10;
+
+    var instr = (0xdf << 8) | 2;
+    softwareInterrupt(instr);
+
+    regs[0] = 120;
+    var instr = (0xdf << 8) | 5;
+    softwareInterrupt(instr)
 }
 
 function notify(title,prompt){
