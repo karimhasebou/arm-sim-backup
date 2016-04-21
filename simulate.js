@@ -53,7 +53,7 @@ function simulate(instr) {
     console.log('simulate instr'+instr);
     switch(fmt){
         case 0b000: // for format zero check whether to add/subtract or shift register
-            (instr >> 11 & 0b11) == 3 ? addSubtract(instr) : moveShiftedRegister(instr);
+            ((instr >> 11) & 0b11) == 3 ? addSubtract(instr) : moveShiftedRegister(instr);
           break;
 
         case 0b001: // arithmetic operations with immediate value
@@ -63,9 +63,9 @@ function simulate(instr) {
         case 0b010: // format 4 & 6 & 7
             if (instr >> 10 == 0x10)
                 alu(instr); // alu operations format 4
-            else if ( (instr >> 11) & 0x9 == 0x9)
+            else if ( ((instr >> 11) & 0x9) == 0x9)
                 pcRelativeLoad(instr); // format 6
-            else if ( (instr >> 12) & 0x5 == 0x5)
+            else if ( ((instr >> 12) & 0x5) == 0x5)
                 loadStoreRegisterOffset(instr); // format 7
             break;
         case 0b011: // format 9
@@ -119,11 +119,11 @@ function simulate(instr) {
 //format 2 completed condition codes
 function addSubtract(instr){
     "use strict";
-    var offsetNReg = instr>>6 & 0b111; // register id or immediate value depending
+    var offsetNReg = (instr>>6) & 0b111; // register id or immediate value depending
     var destinationReg = instr & 0b111;     // on op immediate flag
-    var sourceReg = instr>>3 & 0b111;
-    var immediateFlag = instr>>10 & 0b1;
-    var opCode = instr>>9 & 0b1;
+    var sourceReg = (instr>>3) & 0b111;
+    var immediateFlag = (instr>>10) & 0b1;
+    var opCode = (instr>>9) & 0b1;
     var stringInstr;
 
     if(opCode == 0){ // add
@@ -168,10 +168,10 @@ function addSubtract(instr){
 // format 1 condition flags done
 function moveShiftedRegister(instr){
     "use strict";
-    var offset = instr>>6 & 0b11111; // extract offset
+    var offset = (instr>>6) & 0b11111; // extract offset
     var destinationReg = instr & 0b111;
-    var sourceReg = instr>>3 & 0b111;
-    var opcode = instr>>11 & 0b11;
+    var sourceReg = (instr>>3) & 0b111;
+    var opcode = (instr>>11) & 0b11;
     var stringInstr; // string representation of instruction
     switch(opcode){
         case 0:
@@ -207,9 +207,9 @@ function moveShiftedRegister(instr){
 // format 3,  condition codes done
 function arithmeticImediate(instr){
     "use strict";
-    var offset8 = instr&0xff;
-    var destinationReg = instr>>8 & 0b111;
-    var opCode = instr>>11 & 0b11;
+    var offset8 = instr & 0xff;
+    var destinationReg = (instr>>8) & 0b111;
+    var opCode = (instr>>11) & 0b11;
     var stringInstr;
     switch(opCode){
         case 0:
@@ -259,8 +259,8 @@ function arithmeticImediate(instr){
 function alu(instr){
     "use strict";
     var destinationReg = instr & 0b111;
-    var sourceReg = instr>>3 & 0b111;
-    var opcode = instr>>6 & 0xf;
+    var sourceReg = (instr>>3) & 0b111;
+    var opcode = (instr>>6) & 0xf;
     var stringInstr;
 
     console.log('alu called');
@@ -381,9 +381,9 @@ function alu(instr){
 // format 6
 function pcRelativeLoad(instr){
     'use strict';
-    var rd = instr>>8 & 0b111;
-    var word8 = instr>>8 & 255; // check doc notes
-    regs[rd] = mem[word8+regs[15]];
+    var rd = (instr>>8) & 0b111;
+    var word8 = (instr>>8) & 255; // check doc notes
+    regs[rd] = mem[word8+regs[PC]];
     printInstruction('LDR R'+rd+'[PC,#'+word8+']');
 }
 /*
@@ -423,13 +423,13 @@ function loadStoreRegisterOffset(instr){
 function loadStoreRegisterOffset(instr){
     'use strict';
     var rd = instr & 0x7;
-    var rb = instr>>3 & 0x7;
-    var ro = instr>>6 & 0x7;
+    var rb = (instr>>3) & 0x7;
+    var ro = (instr>>6) & 0x7;
 
     var stringInstr;
-    if(instr>>11 & 1 == 0){ // checking L whether store or load
+    if( ( (instr>>11) & 1) == 0){ // checking L whether store or load
         mem[regs[rb]+regs[ro]] = registerSDNum & 0xff; // get only first 8 bits
-        if( (instr>>10) & 1 == 0){ // save the rest of word
+        if( ((instr>>10) & 1) == 0){ // save the rest of word
           mem[regs[rb]+regs[ro]+1] = (regs[rd]>>8) & 0xff;
           mem[regs[rb]+regs[ro]+2] = (regs[rd]>>16) & 0xff;
           mem[regs[rb]+regs[ro]+3] = (regs[rd]>>24) & 0xff;
@@ -438,7 +438,7 @@ function loadStoreRegisterOffset(instr){
             stringInstr = 'STRB';
     }else{
         regs[registerSDNum] = mem[regs[rb]+regs[ro]];
-        if( (instr>>10 & 1) == 0){
+        if( ((instr>>10) & 1) == 0){
             regs[rd] |= mem[regs[rb]+regs[ro]+1]<<8; // load bits intro appropriate positons
             regs[rd] |= mem[regs[rb]+regs[ro]+2]<<16;
             regs[rd] |= mem[regs[rb]+regs[ro]+3]<<24;
@@ -455,7 +455,7 @@ function loadStoreRegisterOffset(instr){
 function loadStoreWithImmOffset(instr){
     'use strict';
     var offset5 = instr>>6&0x3f;
-    var baseRegisterIndex = instr>>3&0b111;// array index
+    var baseRegisterIndex = instr>>3 & 0b111;// array index
     var baseRegister = regs[baseRegisterIndex]; // regs value
     var registerSDNum = instr&0b111; // source/destination register index
     var stringInstr;
