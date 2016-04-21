@@ -760,6 +760,7 @@ function isAddGenCarry(x,y){
 }
 // format 5
 function hiRegisterBranch(instr){
+    "use strict";
     var rdhs = instr & 0x7;
     var rshs = (instr>>3) & 0x7;
     var h2 = (instr>>6) & 1;
@@ -781,16 +782,27 @@ function hiRegisterBranch(instr){
                 stringInsr += (rdhs+8) + ",R"+(rshs+8);
             }
         break;
-        case 1:
+        case 1:// cmp instructions
             if(h1 == 0 && h2 = 1){
-                regs[rdhs] += regs[rshs+8];
             }else if(h1 == 1 && h2 == 0){
-                regs[rdhs+8] += regs[rshs];
             }else if(h1 == 1 && h2 == 1){
-                regs[rdhs+8] += regs[rshs+8];
+            }
+        break;
+        case 2:
+            stringInsr = "MOV R";
+            if(h1 == 0 && h2 = 1){
+                regs[rdhs] = regs[rshs+8];
+                stringInsr += rdhs + ",R"+(rshs+8);
+            }else if(h1 == 1 && h2 == 0){
+                regs[rdhs+8] = regs[rshs];
+                stringInsr += (rdhs+8) + ",R"+rshs;
+            }else if(h1 == 1 && h2 == 1){
+                regs[rdhs+8] = regs[rshs+8];
+                stringInsr += (rdhs+8) + ",R"+(rshs+8);
             }
         break;
     }
+    printInstruction(stringInsr)
 }
 
 //check notes for immediates ie
