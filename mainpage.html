@@ -4,7 +4,7 @@
         <script src="simulate.js"></script>
         <script src="console.js"></script>
     </head>
-    
+
     <body onload="addEventListeners()">
     <nav>
         <ul>
@@ -18,33 +18,33 @@
         <div id='left_pane'>
             <div class="floating_pane" >
                 <label class='divheader'>Source Code</label>
-                <textarea id="sourceCode" rows="39"></textarea> 
+                <textarea id="sourceCode" rows="39"></textarea>
             </div>
         </div>
-        
+
         <div id="right_pane">
             <div class="floating_pane">
                 <label class="divheader">Executed   Instruction</label>
                 <p id='executed_instruction'></p>
             </div>
-            
+
             <div class="floating_pane" style="height:200px;width:inherit;">
                 <label class="divheader">Program output</label>
-                <p style="background-color:transparent;"></p>
+                <p id ="program_output"style="background-color:transparent;"></p>
             </div>
-            
+
             <div class="floating_pane" style="height:200px;inherit;overflow:auto;">
                 <table id='register_content'>
                 </table>
             </div>
-            
+
         </div>
     </div>
-        
+
     <div id='fileDropBox' class="dropbox">
             <input type="file" id="filesIn"/>
             <output id="list">Drop Files here</output>
     </div>
-        
+
     </body>
 </html>

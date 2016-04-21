@@ -8,12 +8,23 @@ regs[15] = 4; // set program counter 2 since its always 2 instructions ahaed of 
 var zeroFlag = 0,negativeFlag = 0,carryFlag = 0, overflowFlag = 0;
 // conditons flags for implemented formats 1-4 not implemented
 
+var startTimer;
+
 function start(){
+    startTimer = setInterval(step,1000);
 }
 
 function stop(){
-
+    cancelTimedExecution();
 }
+
+function cancelTimedExecution(){
+    if(startTimer != undefined){
+        clearInterval(startTimer);
+        startTimer = undefined;
+    }
+}
+
 // executes of statement
 function step(){
     "use strict";
@@ -25,8 +36,8 @@ function step(){
         printRegisterContent(regs);
         regs[PC] += 2; // increment by one
     }else{ // disable buttons of step and start since execution finished
-        console.log('program execution done');
-        console.log(mem.length + " and pc " + regs[PC]);
+        printProgramOut('program terminated')
+        cancelTimedExecution();
     }
 }
 // returns binary format of decimal numbers
@@ -66,10 +77,12 @@ function simulate(instr) {
                 SPloadStore(instr); // format 11
         case 0b101: // format 12 & 13 &  14
             //format 13 and 14 may have clashed since L can be 0 or 1 using previous parse
-            console.log('formats 12-14');
-            if(instr>>11 != 0xb){
-                console.log('formats 12 format detected');
-            }else if ( (instr>>8) == 0xb0 ){
+            if(instr == 0xAF00)
+            {
+                console.log('format 12');
+
+            }
+            else if ( (instr>>8) == 0xb0 ){
  				addOffsetStackPointer(instr); // format
             }else if(((instr >> 9) & 0b10) == 0b10){
                 pushPopRegisters(instr);
@@ -81,6 +94,7 @@ function simulate(instr) {
         case 0b110: // format 15 & 16 & 17
             if(instr == 0xdead){
                 console.log('program terminated');
+                terminateProgram(0);
             }else if(instr>>8 == 0xdf){
 				softwareInterrupt(instr); // format 17
                 console.log('format 17');
@@ -209,8 +223,8 @@ function arithmeticImediate(instr){
 
             zeroFlag = Number(tmp == 0);
             negativeFlag = Number(tmp < 0);
-            overflowFlag = isAddOverflowing(regs[destination],-offset8,tmp);
-            carryFlag = isAddGenCarry(regs[destination],-offset8);
+            overflowFlag = isAddOverflowing(regs[destinationReg],-offset8,tmp);
+            carryFlag = isAddGenCarry(regs[destinationReg],-offset8);
             break;
         case 2:
             overflowFlag = isAddOverflowing(regs[destinationReg],
@@ -226,16 +240,16 @@ function arithmeticImediate(instr){
 
             break;
         case 3:
-            overflowFlag = isAddOverflowing(regs[destination],
-                offset8,regs[destination]+offset8);
-            carryFlag = isAddGenCarry(regs[destination],offset8);
+            overflowFlag = isAddOverflowing(regs[destinationReg],
+                offset8,regs[destinationReg]+offset8);
+            carryFlag = isAddGenCarry(regs[destinationReg],offset8);
 
             regs[destinationReg] = regs[destinationReg] - offset8;
             stringInstr = concatArgs('SUB ','R',
                     destinationReg,',R',destinationReg,',#',offset8);
 
-            zeroFlag = Number(regs[destination] == 0);
-            negativeFlag = Number(regs[destination] < 0);
+            zeroFlag = Number(regs[destinationReg] == 0);
+            negativeFlag = Number(regs[destinationReg] < 0);
             break;
     }
     printInstruction(stringInstr);
@@ -498,7 +512,7 @@ function longBranchWithLink(instr){
     }else {
         var tmp = regs[PC] ;// address of next instruction = tmp ?
         offset = offset<<21;
-        offset = offset>>>20;
+        offset = (offset>>>20);
         regs[PC] = regs[LR] + offset;
         regs[LR] = tmp | 1;
     }
@@ -640,11 +654,17 @@ function pushPopRegisters(instr){
 }
 // disables step and start buttons
 function terminateProgram(status){
-    console.log('program terminated');
+    cancelTimedExecution();
+    printProgramOut("program terminated ");
+    printInstruction("0xDEAD");
 }
 // format 17 not implemented yet
 function softwareInterrupt(instr){
-    printInstruction('swi');
+    var value8 = instr & 0xff;
+    if(value8 == 1){
+        printProgramOut(regs[0]);
+        printInstruction("SWI 1");
+    }
 }
 /*
 // format 10 not required

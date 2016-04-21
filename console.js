@@ -37,17 +37,17 @@ function hideDropBox(){
 function readFileContent(event){
     "use strict";
     var file = event.target.files[0];
-    
+
     if(file){
         var reader = new FileReader();
-        
+
         reader.onload = function(e){
             var contents = e.target.result;
             var program = new Uint8Array(contents);
-            
+
             for(var i = 0; i < program.length;i++)
                 mem[i] = program[i]; // temp fix
-            
+
             setBeginningConfig();
             notify('Success','File read');
         }
@@ -62,7 +62,7 @@ function resizeUint8(baseArrayBuffer, newByteSize) {
     var resizedArrayBuffer = new ArrayBuffer(newByteSize),
         len = baseArrayBuffer.byteLength,
         resizeLen = (len > newByteSize)? newByteSize : len;
-    
+
         (new Uint8Array(resizedArrayBuffer, 0, resizeLen)).set(new Uint8Array(baseArrayBuffer, 0, resizeLen));
 
     return resizedArrayBuffer;
@@ -75,7 +75,7 @@ function setBeginningConfig(){
 
 function addEventListeners(){
  document.getElementById('filesIn').addEventListener('change',readFileContent,true);
-    
+
   document.addEventListener('DOMContentLoaded', function () {
   if (Notification.permission !== "granted")
         Notification.requestPermission();
@@ -88,13 +88,17 @@ function notify(title,prompt){
         alert('Desktop notifications not available');
         return;
     }
-    
+
     if(Notification.permission !== "granted")
         Notification.requestPermission();
     else{
         var notification = new Notification(title, {
             body: prompt,
         });
-        
+
     }
+}
+
+function printProgramOut(instr){
+    document.getElementById("program_output").innerHTML += instr + "</br>";
 }

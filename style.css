@@ -1,5 +1,5 @@
 body{
-    
+
     background-color:#333;
     margin: 0;
     padding: 0;
@@ -67,14 +67,14 @@ div.split_pane{
 
 
 @media screen and (max-width:700px){
-	div.split_pane{	
-		-webkit-flex-direction: column;	
+	div.split_pane{
+		-webkit-flex-direction: column;
 	}
 }
 
 @media screen and (min-width:701px){
-	div.split_pane{	
-		-webkit-flex-direction: row;	
+	div.split_pane{
+		-webkit-flex-direction: row;
 	}
 }
 
@@ -95,7 +95,7 @@ div.split_pane{
     //box-shadow:0px 3px 20px #111111;
     border-color: #111111;
     resize: none;
-    //   margin-left:auto;   
+    //   margin-left:auto;
    // display:block;
    // clear:both;
 }
@@ -122,6 +122,13 @@ label.divheader{
 #executed_instruction{
     height: 1em;
     color: black;
+    font-size: 1.3em;
+    font-family: monospace;
+}
+
+#program_output{
+    height: 1em;
+    color: white;
     font-size: 1.3em;
     font-family: monospace;
 }
