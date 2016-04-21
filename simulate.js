@@ -60,8 +60,10 @@ function simulate(instr) {
             arithmeticImediate(instr);
             break;
 
-        case 0b010: // format 4 & 6 & 7
-            if (instr >> 10 == 0x10)
+        case 0b010: // format 4 & 5 & 6 & 7
+            if(instr >> 10 == 0x11){
+                hiRegisterBranch(instr);
+            }else if (instr >> 10 == 0x10)
                 alu(instr); // alu operations format 4
             else if ( ((instr >> 11) & 0x9) == 0x9)
                 pcRelativeLoad(instr); // format 6
@@ -78,10 +80,10 @@ function simulate(instr) {
                 SPloadStore(instr); // format 11
         case 0b101: // format 12 & 13 &  14
             //format 13 and 14 may have clashed since L can be 0 or 1 using previous parse
-            if(instr == 0xAF00)
+            if((instr>>12) == 0xA)
             {
                 console.log('format 12');
-
+                loadAddress(instr);
             }
             else if ( (instr>>8) == 0xb0 ){
  				addOffsetStackPointer(instr); // format
@@ -717,28 +719,29 @@ function SPloadStore(instr){
     stringInstr += 'R' + destinationReg + ",[R13] #" + immediate + ']';
     printInstruction(stringInstr);
 } */
-/*
+
 // format 12 not required
 function loadAddress(instr) {
-    var immediate = instr & 0b11111111;
-    var destinationReg = intsr >> 8 & 0b111;
+    var immediate = instr & 0xff;
+    var destinationReg = instr >> 8 & 0b111;
     var stringInstr = "ADD R";
-    if (inst >> 11 & 1 == 0) {
-        regs[destinationReg] = mems[immediate + regs[15]];
-        regs[destinationReg] = mems[immediate + regs[15] + 1] << 8;
-        regs[destinationReg] = mems[immediate + regs[15] + 2] << 16;
-        regs[destinationReg] = mems[immediate + regs[15] + 3] << 32;
+    var sp = (instr>>11) & 1;
+    if ( ((instr >> 11) & 1) == 0) {
+        regs[destinationReg] = mem[immediate + regs[PC]];
+        regs[destinationReg] = mem[immediate + regs[PC] + 1] << 8;
+        regs[destinationReg] = mem[immediate + regs[PC] + 2] << 16;
+        regs[destinationReg] = mem[immediate + regs[PC] + 3] << 32;
         stringInstr += destinationReg + ", R15, #" + immediate;
     }
     else {
-        regs[destinationReg] = mems[immediate + regs[13]];
-        regs[destinationReg] = mems[immediate + regs[13] + 1] << 8;
-        regs[destinationReg] = mems[immediate + regs[13] + 2] << 16;
-        regs[destinationReg] = mems[immediate + regs[13] + 3] << 32;
+        regs[destinationReg] = mem[immediate + regs[LR]];
+        regs[destinationReg] = mem[immediate + regs[LR] + 1] << 8;
+        regs[destinationReg] = mem[immediate + regs[LR] + 2] << 16;
+        regs[destinationReg] = mem[immediate + regs[LR] + 3] << 32;
         stringInstr += destinationReg + ", R13, #" + immediate;
     }
-    printInstruction(stringInsr);
-} */
+    printInstruction(stringInstr);
+}
 // determines if answer will overflow
 function isAddOverflowing(x,y,z){
     var overflow;
@@ -766,43 +769,46 @@ function hiRegisterBranch(instr){
     var h2 = (instr>>6) & 1;
     var h1 = (instr>>7) & 1;
     var opcode = (instr>>8) & 0x3;
-    var stringInsr;
+    var stringInstr;
 
     switch(opcode){
         case 0:
-            stringInsr = "ADD R";
-            if(h1 == 0 && h2 = 1){
+            stringInstr = "ADD R";
+            if(h1 == 0 && h2 == 1){
                 regs[rdhs] += regs[rshs+8];
-                stringInsr += rdhs + ",R"+(rshs+8);
+                stringInstr += rdhs + ",R"+(rshs+8);
             }else if(h1 == 1 && h2 == 0){
                 regs[rdhs+8] += regs[rshs];
-                stringInsr += (rdhs+8) + ",R"+rshs;
+                stringInstr += (rdhs+8) + ",R"+rshs;
             }else if(h1 == 1 && h2 == 1){
                 regs[rdhs+8] += regs[rshs+8];
-                stringInsr += (rdhs+8) + ",R"+(rshs+8);
+                stringInstr += (rdhs+8) + ",R"+(rshs+8);
             }
         break;
         case 1:// cmp instructions
-            if(h1 == 0 && h2 = 1){
+            stringInstr = "undefined case 1 format 5";
+            if(h1 == 0 && h2 == 1){
             }else if(h1 == 1 && h2 == 0){
             }else if(h1 == 1 && h2 == 1){
             }
         break;
         case 2:
-            stringInsr = "MOV R";
-            if(h1 == 0 && h2 = 1){
+            stringInstr = "MOV R";
+            if(h1 == 0 && h2 == 1){
                 regs[rdhs] = regs[rshs+8];
-                stringInsr += rdhs + ",R"+(rshs+8);
+                stringInstr += rdhs + ",R"+(rshs+8);
             }else if(h1 == 1 && h2 == 0){
                 regs[rdhs+8] = regs[rshs];
-                stringInsr += (rdhs+8) + ",R"+rshs;
+                stringInstr += (rdhs+8) + ",R"+rshs;
             }else if(h1 == 1 && h2 == 1){
                 regs[rdhs+8] = regs[rshs+8];
-                stringInsr += (rdhs+8) + ",R"+(rshs+8);
+                stringInstr += (rdhs+8) + ",R"+(rshs+8);
             }
         break;
+        default:
+            stringInstr = "undefined case 1 format 5";
     }
-    printInstruction(stringInsr)
+    printInstruction(stringInstr)
 }
 
 //check notes for immediates ie
