@@ -29,9 +29,10 @@ function cancelTimedExecution(){
 function step(){
     "use strict";
 
-    var instrLoc = regs[15]-4;
+    var instrLoc = regs[PC]-4;
     if(instrLoc < mem.length){
         var instr = mem[instrLoc] | mem[instrLoc+1]<<8
+        console.log("instr exec"+instrLoc);
         simulate(instr);// load upper and lower part of half word instruction
         printRegisterContent(regs);
         regs[PC] += 2; // increment by one
@@ -458,9 +459,11 @@ function loadStoreWithImmOffset(instr){
     var baseRegister = regs[baseRegisterIndex]; // regs value
     var registerSDNum = instr&0b111; // source/destination register index
     var stringInstr;
-    if(instr>>11 & 1 == 0){ // checking L whether store or load
+
+    var cond = (instr>>11) & 1;
+    if(cond == 0){ // checking L whether store or load
         mem[baseRegister+offset5] = registerSDNum & 0xff; // get only first 8 bits
-        if( (instr>>12) & 1 == 0){ // save the rest of word
+        if( ((instr>>12) & 1) == 0){ // save the rest of word
           mem[offset5+baseRegister+1] = regs[registerSDNum]>>8 & 0xff;
           mem[offset5+baseRegister+2] = regs[registerSDNum]>>16 & 0xff;
           mem[offset5+baseRegister+3] = regs[registerSDNum]>>24 & 0xff;
@@ -469,7 +472,7 @@ function loadStoreWithImmOffset(instr){
             stringInstr = 'STRB';
     }else{
             regs[registerSDNum] = mem[offset5+baseRegister];
-        if( (instr>>12 & 1) == 0){
+        if( ((instr>>12) & 1) == 0){
             regs[registerSDNum] |= mem[offset5+baseRegister+1]<<8; // load bits intro appropriate positons
             regs[registerSDNum] |= mem[offset5+baseRegister+2]<<16;
             regs[registerSDNum] |= mem[offset5+baseRegister+3]<<24;
@@ -511,10 +514,11 @@ function longBranchWithLink(instr){
 		regs[LR] = regs[PC] + offset;
     }else {
         var tmp = regs[PC] ;// address of next instruction = tmp ?
+        console.log(tmp);
         offset = offset<<21;
         offset = (offset>>>20);
-        regs[PC] = regs[LR] + offset;
-        regs[LR] = tmp | 1;
+        regs[PC] = regs[LR] + offset + 2;
+    //    regs[LR] = tmp | 1;
     }
     var stringInstr = "BL " + offset; // supposed to be label
     printInstruction(stringInstr);
