@@ -11,7 +11,7 @@ var zeroFlag = 0,negativeFlag = 0,carryFlag = 0, overflowFlag = 0;
 var startTimer;
 
 function start(){
-    startTimer = setInterval(step,1000);
+    startTimer = setInterval(step,500);
 }
 
 function stop(){
@@ -319,6 +319,7 @@ function alu(instr){
 
             overflowFlag  = isAddOverflowing(tmp,-reg[sourceReg]);
             overflowFlag |= isAddOverflowing(tmp-regs[sourceReg],-carryFlag);
+
             var carry = Number(tmp)-Number(regs[sourceReg])-carryFlag;
             carryFlag = carry>>32; //extract
             break;
@@ -344,20 +345,30 @@ function alu(instr){
             break;
         case 10://CMP
             var result = regs[destinationReg] - regs[sourceReg];
+            stringInstr = 'CMP R'+destinationReg+',R'+sourceReg;
 
             zeroFlag = Number(result == 0);
             negativeFlag = Number(result < 0);
+
+            overflowFlag = isAddOverflowing(regs[destinationReg]
+                ,regs[sourceReg],result);
+            carryFlag = isAddGenCarry(regs[destinationReg],regs[sourceReg]);
+
             printInstruction(stringInstr);
             return;
             break;
         case 11:
-            var result = regs[destinationReg] - regs[sourceReg];
+            var result = regs[destinationReg] + regs[sourceReg];
+            stringInstr = 'CMN R'+destinationReg+',R'+sourceReg;
 
             zeroFlag = Number(result == 0);
             negativeFlag = Number(result < 0);
+            overflowFlag = isAddOverflowing(regs[destinationReg]
+                ,regs[sourceReg],result);
+            carryFlag = isAddGenCarry(regs[destinationReg],regs[sourceReg]);
+
             printInstruction(stringInstr);
             return;
-
             break;
         case 12:
             regs[destinationReg] |= regs[sourceReg];
@@ -456,10 +467,10 @@ function loadStoreRegisterOffset(instr){
 // format 9
 function loadStoreWithImmOffset(instr){
     'use strict';
-    var offset5 = instr>>6&0x3f;
-    var baseRegisterIndex = instr>>3 & 0b111;// array index
+    var offset5 = (instr>> 6) & 0x1f;
+    var baseRegisterIndex = (instr>>3) & 0b111;// array index
     var baseRegister = regs[baseRegisterIndex]; // regs value
-    var registerSDNum = instr&0b111; // source/destination register index
+    var registerSDNum = instr & 0b111; // source/destination register index
     var stringInstr;
 
     var cond = (instr>>11) & 1;
@@ -520,7 +531,7 @@ function longBranchWithLink(instr){
         offset = offset<<21;
         offset = (offset>>>20);
         regs[PC] = regs[LR] + offset + 2;
-    //    regs[LR] = tmp | 1;
+        regs[LR] = tmp;
     }
     var stringInstr = "BL " + offset; // supposed to be label
     printInstruction(stringInstr);
@@ -635,7 +646,15 @@ function pushPopRegisters(instr){
         }
     }else{ // pop regs
         instrString = 'POP{ ';
-        for(var i = 0; i < 8;i++){
+        if(((instr>>8) & 1) == 1){
+                regs[PC]  = mem[regs[STACK_POINTER]];
+                regs[PC] |= mem[regs[STACK_POINTER]+1]<<8;
+                regs[PC] |= mem[regs[STACK_POINTER]+2]<<16;
+                regs[PC] |= mem[regs[STACK_POINTER]+3]<<24;
+                regs[STACK_POINTER] += 4;
+                instrString += 'PC,';
+         }
+        for(var i = 7; i >= 0;i--){
             if(instr>>i & 1 == 1){
                 regs[i]  = mem[regs[STACK_POINTER]];
                 regs[i] |= mem[regs[STACK_POINTER]+1]<<8;
@@ -645,14 +664,6 @@ function pushPopRegisters(instr){
                 instrString += 'R'+i+',';
             }
         }
-        if(((instr>>8) & 1) == 1){
-                regs[PC]  = mem[regs[STACK_POINTER]];
-                regs[PC] |= mem[regs[STACK_POINTER]+1]<<8;
-                regs[PC] |= mem[regs[STACK_POINTER]+2]<<16;
-                regs[PC] |= mem[regs[STACK_POINTER]+3]<<24;
-                regs[STACK_POINTER] += 4;
-                instrString += 'PC';
-         }
     }
     if(instrString.length == instrString.lastIndexOf(','))
         instrString = instrString.substr(0,instrString-1); // remove last comma
