@@ -727,17 +727,19 @@ function loadAddress(instr) {
     var stringInstr = "ADD R";
     var sp = (instr>>11) & 1;
     if ( ((instr >> 11) & 1) == 0) {
-        regs[destinationReg] = mem[immediate + regs[PC]];
+        /*regs[destinationReg] = mem[immediate + regs[PC]];
         regs[destinationReg] = mem[immediate + regs[PC] + 1] << 8;
         regs[destinationReg] = mem[immediate + regs[PC] + 2] << 16;
-        regs[destinationReg] = mem[immediate + regs[PC] + 3] << 32;
+        regs[destinationReg] = mem[immediate + regs[PC] + 3] << 32; */
+        regs[destinationReg] = regs[PC] + immediate;
         stringInstr += destinationReg + ", R15, #" + immediate;
     }
-    else {
+    else {/*
         regs[destinationReg] = mem[immediate + regs[STACK_POINTER]];
         regs[destinationReg] = mem[immediate + regs[STACK_POINTER] + 1] << 8;
         regs[destinationReg] = mem[immediate + regs[STACK_POINTER] + 2] << 16;
-        regs[destinationReg] = mem[immediate + regs[STACK_POINTER] + 3] << 32;
+        regs[destinationReg] = mem[immediate + regs[STACK_POINTER] + 3] << 32; */
+        regs[destinationReg] = regs[STACK_POINTER] + immediate;
         stringInstr += destinationReg + ", R13, #" + immediate;
     }
     printInstruction(stringInstr);
@@ -810,10 +812,3 @@ function hiRegisterBranch(instr){
     }
     printInstruction(stringInstr)
 }
-
-//check notes for immediates ie
-/*#Imm is a full 7-bit address, but must
-be word-aligned (ie with bits 1:0 set to 0), since the assembler places #Imm >> 2 in
-the Offset5 field.
-*/
-// dk if important
