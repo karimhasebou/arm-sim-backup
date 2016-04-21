@@ -11,7 +11,7 @@ var zeroFlag = 0,negativeFlag = 0,carryFlag = 0, overflowFlag = 0;
 var startTimer;
 
 function start(){
-    startTimer = setInterval(step,500);
+    startTimer = setInterval(step,1000);
 }
 
 function stop(){
@@ -679,7 +679,7 @@ function terminateProgram(status){
 // format 17 not implemented yet
 function softwareInterrupt(instr){
     var value8 = instr & 0xff;
-    case (value8){
+    switch (value8){
         case 1:
             printProgramOut(regs[0]);
             printInstruction("SWI 1");
@@ -690,7 +690,7 @@ function softwareInterrupt(instr){
             break;
         case 3: // reading string assume r0 contains address r1 contains string size
             var input = prompt("Enter a string");
-            for(int i = 0; i < regs[1]-1;i++){
+            for(var i = 0; i < regs[1]-1;i++){
                 mem[regs[0]+i] = input[i];
             }mem[regs[0]+regs[1]] = 0;
             break;
