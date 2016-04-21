@@ -734,10 +734,10 @@ function loadAddress(instr) {
         stringInstr += destinationReg + ", R15, #" + immediate;
     }
     else {
-        regs[destinationReg] = mem[immediate + regs[LR]];
-        regs[destinationReg] = mem[immediate + regs[LR] + 1] << 8;
-        regs[destinationReg] = mem[immediate + regs[LR] + 2] << 16;
-        regs[destinationReg] = mem[immediate + regs[LR] + 3] << 32;
+        regs[destinationReg] = mem[immediate + regs[STACK_POINTER]];
+        regs[destinationReg] = mem[immediate + regs[STACK_POINTER] + 1] << 8;
+        regs[destinationReg] = mem[immediate + regs[STACK_POINTER] + 2] << 16;
+        regs[destinationReg] = mem[immediate + regs[STACK_POINTER] + 3] << 32;
         stringInstr += destinationReg + ", R13, #" + immediate;
     }
     printInstruction(stringInstr);
