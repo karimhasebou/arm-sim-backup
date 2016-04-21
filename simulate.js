@@ -661,6 +661,7 @@ function terminateProgram(status){
     cancelTimedExecution();
     printProgramOut("program terminated ");
     printInstruction("0xDEAD");
+    disableExecutionButtons();
 }
 // format 17 not implemented yet
 function softwareInterrupt(instr){
@@ -756,6 +757,40 @@ function isAddGenCarry(x,y){
     if(x < 0&& y < 0)
         return Number((Number(x) + Number(y))>>32 & 1 == 0); // carry for negative if bit zero
     return (Number(x) + Number(y))>>32 & 1;
+}
+// format 5
+function hiRegisterBranch(instr){
+    var rdhs = instr & 0x7;
+    var rshs = (instr>>3) & 0x7;
+    var h2 = (instr>>6) & 1;
+    var h1 = (instr>>7) & 1;
+    var opcode = (instr>>8) & 0x3;
+    var stringInsr;
+
+    switch(opcode){
+        case 0:
+            stringInsr = "ADD R";
+            if(h1 == 0 && h2 = 1){
+                regs[rdhs] += regs[rshs+8];
+                stringInsr += rdhs + ",R"+(rshs+8);
+            }else if(h1 == 1 && h2 == 0){
+                regs[rdhs+8] += regs[rshs];
+                stringInsr += (rdhs+8) + ",R"+rshs;
+            }else if(h1 == 1 && h2 == 1){
+                regs[rdhs+8] += regs[rshs+8];
+                stringInsr += (rdhs+8) + ",R"+(rshs+8);
+            }
+        break;
+        case 1:
+            if(h1 == 0 && h2 = 1){
+                regs[rdhs] += regs[rshs+8];
+            }else if(h1 == 1 && h2 == 0){
+                regs[rdhs+8] += regs[rshs];
+            }else if(h1 == 1 && h2 == 1){
+                regs[rdhs+8] += regs[rshs+8];
+            }
+        break;
+    }
 }
 
 //check notes for immediates ie

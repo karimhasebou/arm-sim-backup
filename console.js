@@ -102,3 +102,13 @@ function notify(title,prompt){
 function printProgramOut(instr){
     document.getElementById("program_output").innerHTML += instr + "</br>";
 }
+
+function disableExecutionButtons(){
+    var start = document.getElementById('start_button');
+    var stop  = document.getElementById('stop_button');
+    var step  = document.getElementById('step_button');
+
+    start.disabled = true;
+    stop.disabled = true;
+    step.disabled = true;
+}
